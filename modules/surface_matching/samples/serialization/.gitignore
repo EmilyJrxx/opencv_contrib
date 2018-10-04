@@ -16,3 +16,4 @@ CTestTestfile.cmake
 *.xml
 *.json
 *.gz
+serialization
