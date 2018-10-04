@@ -3,6 +3,7 @@
 #include "opencv2/surface_matching/ppf_helpers.hpp"
 #include "opencv2/core/utility.hpp"
 #include "opencv2/opencv.hpp"
+#include <fstream>
 
 using namespace std;
 using namespace cv;
@@ -55,33 +56,44 @@ int main(int argc, char **argv)
 
   int64 tick1, tick2;
 
+  ifstream detectorFile(DETECTOR_FILENAME);
+
+  if (!detectorFile.good())
   {
-    // Train the model
+    {
+      // Train the model
 
-    cout << "Training..." << endl;
-    tick1 = cv::getTickCount();
-    ppf_match_3d::PPF3DDetector detector(0.025, 0.05);
-    detector.trainModel(pc);
-    tick2 = cv::getTickCount();
+      cout << "Training..." << endl;
+      tick1 = cv::getTickCount();
+      ppf_match_3d::PPF3DDetector detector(0.025, 0.05);
+      detector.trainModel(pc);
+      tick2 = cv::getTickCount();
 
-    cout << "Training complete in "
-         << (double)(tick2 - tick1) / cv::getTickFrequency()
-         << " sec" << endl;
+      cout << "Training complete in "
+           << (double)(tick2 - tick1) / cv::getTickFrequency()
+           << " sec" << endl;
 
-    // Serialize the model
+      // Serialize the model
 
-    cout << "Serializing..." << endl;
+      cout << "Serializing..." << endl;
 
-    tick1 = cv::getTickCount();
-    FileStorage fsOut(DETECTOR_FILENAME, FileStorage::WRITE);
-    detector.write(fsOut);
-    fsOut.release();
-    tick2 = cv::getTickCount();
+      tick1 = cv::getTickCount();
+      FileStorage fsOut(DETECTOR_FILENAME, FileStorage::WRITE);
+      detector.write(fsOut);
+      fsOut.release();
+      tick2 = cv::getTickCount();
 
-    cout << "Serialization complete in "
-         << (double)(tick2 - tick1) / cv::getTickFrequency()
-         << " sec" << endl;
+      cout << "Serialization complete in "
+           << (double)(tick2 - tick1) / cv::getTickFrequency()
+           << " sec" << endl;
+    }
   }
+  else
+  {
+    cout << "Found detector file: Skipping training phase" << endl;
+  }
+
+  detectorFile.close();
 
   // Read the serialized model
 
