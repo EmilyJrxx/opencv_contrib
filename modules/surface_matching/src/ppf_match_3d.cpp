@@ -620,20 +620,24 @@ void PPF3DDetector::read(const FileNode &fn)
   hashtable_int *_hash_table = hashtableCreate(hash_table_size, NULL);
   THash *_hash_nodes = (THash *)calloc(hash_table_size, sizeof(THash));
 
+  int hash_table_nodes_size;
+  fn["hash_table_nodes_size"] >> hash_table_nodes_size;
+
   FileNode fn_nodes = fn["hash_table_nodes"];
 
+  int *node_values_arr = (int *)calloc(hash_table_nodes_size, sizeof(int));
+  fn_nodes.readRaw("i", (uchar *)node_values_arr, hash_table_nodes_size);
+
   uint counter = 0;
-  int id, i, ppf_ind;
-  FileNode item;
-  THash *thash_item;
 
-  for (FileNodeIterator it = fn_nodes.begin(); it != fn_nodes.end(); it++)
+  for (int j = 0; j < hash_table_nodes_size; j += 3)
   {
-    item = *it;
+    int id, i, ppf_ind;
+    THash *thash_item;
 
-    item["id"] >> id;
-    item["i"] >> i;
-    item["ppfInd"] >> ppf_ind;
+    id = node_values_arr[j];
+    i = node_values_arr[j + 1];
+    ppf_ind = node_values_arr[j + 2];
 
     thash_item = &_hash_nodes[counter];
     thash_item->id = id;
@@ -644,6 +648,8 @@ void PPF3DDetector::read(const FileNode &fn)
 
     counter++;
   }
+
+  free(node_values_arr);
 
   this->hash_nodes = _hash_nodes;
   this->hash_table = _hash_table;
@@ -674,6 +680,8 @@ void PPF3DDetector::write(FileStorage &fs) const
   struct hashnode_i *node;
   THash *data;
 
+  int nodes_counter = 0;
+
   fs << "hash_table_nodes"
      << "[";
 
@@ -685,17 +693,19 @@ void PPF3DDetector::write(FileStorage &fs) const
     {
       data = (THash *)node->data;
 
-      fs << "{";
-      fs << "id" << data->id;
-      fs << "i" << data->i;
-      fs << "ppfInd" << data->ppfInd;
-      fs << "}";
+      fs << data->id;
+      fs << data->i;
+      fs << data->ppfInd;
+
+      nodes_counter += 3;
 
       node = node->next;
     }
   }
 
   fs << "]";
+
+  fs << "hash_table_nodes_size" << nodes_counter;
 }
 
 } // namespace ppf_match_3d
